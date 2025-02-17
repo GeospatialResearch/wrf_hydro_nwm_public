@@ -34,10 +34,9 @@ WORKDIR /wrf_hydro/build
 
 # Compile WRF-Hydro
 RUN cmake .. && \
-    make -j 4
-
-# Initialise test data
-RUN make croton
+    make -j 4 && \
+    # Initialise test data
+    make croton
 
 WORKDIR /wrf_hydro/build/Run
 
@@ -56,9 +55,15 @@ RUN apt-get update && \
         libopenmpi-dev \
         netcdf-bin \
         mpi-default-dev && \
-    rm -fr /var/lib/apt/lists/*
-
+    rm -fr /var/lib/apt/lists/* && \
+    # Make safe output folder that won't be overwritten by existing files
+    mkdir /docker_volume
 # Copy compiled executable and test data from build image
 COPY --from=build /wrf_hydro/build/Run /app
 
-CMD ./wrf_hydro.exe
+# Prepare docker volume for wrf_hydro run by clearing it, ignoring if it is empty
+CMD rm -r docker_volume/* 2> /dev/null || true && \
+    # Run wrf_hydro
+    ./wrf_hydro.exe && \
+    # Copy input and output files to docker_volume for easy/safe retrieval
+    cp -r ./* ../docker_volume

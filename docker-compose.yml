@@ -1,0 +1,5 @@
+services:
+  wrf:
+    build: .
+    volumes:
+      - ./docker_volume:/docker_volume
